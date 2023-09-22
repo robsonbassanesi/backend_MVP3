@@ -71,6 +71,7 @@ def add_sales(form: SaleSchema):
             amount=form.amount,
             unitary_value=form.unitary_value,
             total=form.amount * form.unitary_value,
+            user_id=form.user_id,
         )
         print(new_sale)
 
@@ -96,48 +97,27 @@ def add_sales(form: SaleSchema):
         error_msg = "Não foi possível salvar a nova transação :/"
         return {"message": error_msg}, 400
 
-#     """Faz a busca por todas as transações cadastradas
-
-#     Retorna uma representação da listagem de transações em formato JSON.
-#     """
-#     # criando conexão com a base
-#     session = Session()
-#     # fazendo a busca
-#     sales = session.query(Sale).all()
-
-#     if not sales:
-#         # se não há transações cadastradas
-#         return jsonify({"sales": []}), 200
-#     else:
-#         # cria uma lista de dicionários a partir dos objetos Sale
-#         sales_data = [{"customer": sale.customer,
-#                        "product": sale.product,
-#                        "category": sale.category,
-#                        "amount": sale.amount,
-#                        "unitary_value": sale.unitary_value,
-#                        "total": sale.total} for sale in sales]
-
-#         return jsonify({"sales": sales_data}), 200
-
 
 @app.get('/sales', tags=[sale_tag], responses={"200": SaleListSchema, "404": ErrorSchema})
-def get_sales():
-    """Faz a busca por todas as transações cadastradas
+def get_sales(query: SalesSearchSchema):
+    """Faz a busca por todas as transações cadastradas do usuário logado
 
     Retorna uma representação da listagem de transações.
     """
     try:
         # criando conexão com a base
+        user_id = query.user_id
         session = Session()
-        # fazendo a busca
-        sales = session.query(Sale).all()
+
+        # fazendo a busca por vendas relacionadas ao usuário logado
+        sales = session.query(Sale).filter_by(user_id=user_id).all()
 
         if not sales:
-            # se não há transações cadastradas
-            return {"sales": []}, 200
+            # se não há transações cadastradas para esse usuário
+            return {"user_id": user_id, "sales": []}, 200
         else:
-            # retorna a representação da transação
-            return sales_show(sales), 200
+            # retorna a representação das transações
+            return sales_show(sales, user_id), 200
     except Exception as e:
         print("Erro na rota /sales:", str(e))
         return {"message": "Erro interno na API"}, 500
@@ -187,43 +167,6 @@ def del_sale(query: SaleSearchSchema):
         # se o produto não foi encontrado
         error_msg = "Transação não encontrada na base :/"
         return {"mesage": error_msg}, 404
-
-
-# @app.post('/user', tags=[user_tag], responses={"200": UserViewSchema, "409": ErrorSchema, "400": ErrorSchema})
-# def add_user(form: UserSchema):
-    """Adiciona uma nova transação à base de dados
-
-    Retorna uma representação das transações.
-    """
-    try:
-        # Crie uma nova venda com os dados recebidos
-        new_user = User(
-            display_name=form.display_name,
-            photo_url=form.photo_url,
-            email=form.email,
-        )
-
-        # Criando conexão com a base de dados
-        session = Session()
-
-        # Adicione a venda à sessão
-        session.add(new_user)
-
-        # Efetue a operação de commit para salvar a nova venda no banco de dados
-        session.commit()
-
-        # Retorne a representação da nova venda
-        return user_show(new_user), 200
-
-    except IntegrityError as e:
-        # Como a duplicidade do nome é a provável razão do IntegrityError
-        error_msg = "Erro de integridade, verifique os valores inseridos"
-        return {"message": error_msg}, 409
-
-    except Exception as e:
-        # Caso ocorra um erro inesperado
-        error_msg = "Não foi possível salvar a nova transação :/"
-        return {"message": error_msg}, 400
 
 
 @app.post('/user', tags=[user_tag], responses={"200": UserViewSchema, "409": ErrorSchema, "400": ErrorSchema})
