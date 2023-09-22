@@ -1,9 +1,9 @@
 from flask_openapi3 import OpenAPI, Info, Tag
 from sqlalchemy.exc import IntegrityError
 from flask_cors import CORS
-from flask import redirect
-from flask import request
-from flask import jsonify
+from flask import redirect, request, jsonify
+import jwt  # Importe a biblioteca JWT
+
 
 from model import Session, Sale, User
 from schemas import *
@@ -23,6 +23,31 @@ sale_tag = Tag(
 user_tag = Tag(
     name="Usuário", description="Adição, visualização e remoção de transações à base")
 
+JWT_SECRET_KEY = "5QgmGbi)las}r}B~{h6WKw15{f+B"
+
+
+def auth_middleware(next):
+    def middleware():
+        authorization = request.headers.get("Authorization")
+
+        if not authorization:
+            return jsonify({"error": "Token not provided"}), 401
+
+        _, token = authorization.split(" ")
+
+        try:
+            decoded = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
+            user_id = decoded["id"]
+
+            request.user_id = user_id
+            return next()
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token expired"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Token invalid"}), 401
+
+    return middleware
+
 
 @app.get('/', tags=[home_tag])
 def home():
@@ -33,68 +58,89 @@ def home():
 
 @app.post('/sale', tags=[sale_tag], responses={"200": SaleViewSchema, "409": ErrorSchema, "400": ErrorSchema})
 def add_sales(form: SaleSchema):
-    """Adiciona uma nova transação a base de dados
+    """Adiciona uma nova transação à base de dados
 
     Retorna uma representação das transações.
     """
-    data = request.json
-
-    # Crie um novo usuário com os dados recebidos
-
-    new_sale = Sale(
-        customer=data.get("customer"),
-        product=data.get("product"),
-        category=data.get("category"),
-        amount=data.get("amount"),
-        unitary_value=data.get("unitary_value"),
-        total=data.get("amount") * data.get("unitary_value"),
-        # createdAt=form.createdAt
-    )
-
     try:
-        # criando conexão com a base
+        # Crie uma nova venda com os dados recebidos
+        new_sale = Sale(
+            customer=form.customer,
+            product=form.product,
+            category=form.category,
+            amount=form.amount,
+            unitary_value=form.unitary_value,
+            total=form.amount * form.unitary_value,
+        )
+        print(new_sale)
+
+        # Criando conexão com a base de dados
         session = Session()
-        # adicionando produto
+
+        # Adicione a venda à sessão
         session.add(new_sale)
-        # efetivando o camando de adição de novo item na tabela
+
+        # Efetue a operação de commit para salvar a nova venda no banco de dados
         session.commit()
+
+        # Retorne a representação da nova venda
         return sale_show(new_sale), 200
 
     except IntegrityError as e:
-        # como a duplicidade do nome é a provável razão do IntegrityError
+        # Como a duplicidade do nome é a provável razão do IntegrityError
         error_msg = "Erro de integridade, verifique os valores inseridos"
-        return {"mesage": error_msg}, 409
+        return {"message": error_msg}, 409
 
     except Exception as e:
-        # caso um erro fora do previsto
-        error_msg = "Não foi possível salvar nova transação :/"
-        return {"mesage": error_msg}, 400
+        # Caso ocorra um erro inesperado
+        error_msg = "Não foi possível salvar a nova transação :/"
+        return {"message": error_msg}, 400
+
+#     """Faz a busca por todas as transações cadastradas
+
+#     Retorna uma representação da listagem de transações em formato JSON.
+#     """
+#     # criando conexão com a base
+#     session = Session()
+#     # fazendo a busca
+#     sales = session.query(Sale).all()
+
+#     if not sales:
+#         # se não há transações cadastradas
+#         return jsonify({"sales": []}), 200
+#     else:
+#         # cria uma lista de dicionários a partir dos objetos Sale
+#         sales_data = [{"customer": sale.customer,
+#                        "product": sale.product,
+#                        "category": sale.category,
+#                        "amount": sale.amount,
+#                        "unitary_value": sale.unitary_value,
+#                        "total": sale.total} for sale in sales]
+
+#         return jsonify({"sales": sales_data}), 200
 
 
 @app.get('/sales', tags=[sale_tag], responses={"200": SaleListSchema, "404": ErrorSchema})
 def get_sales():
     """Faz a busca por todas as transações cadastradas
 
-    Retorna uma representação da listagem de transações em formato JSON.
+    Retorna uma representação da listagem de transações.
     """
-    # criando conexão com a base
-    session = Session()
-    # fazendo a busca
-    sales = session.query(Sale).all()
+    try:
+        # criando conexão com a base
+        session = Session()
+        # fazendo a busca
+        sales = session.query(Sale).all()
 
-    if not sales:
-        # se não há transações cadastradas
-        return jsonify({"sales": []}), 200
-    else:
-        # cria uma lista de dicionários a partir dos objetos Sale
-        sales_data = [{"customer": sale.customer,
-                       "product": sale.product,
-                       "category": sale.category,
-                       "amount": sale.amount,
-                       "unitary_value": sale.unitary_value,
-                       "total": sale.total} for sale in sales]
-
-        return jsonify({"sales": sales_data}), 200
+        if not sales:
+            # se não há transações cadastradas
+            return {"sales": []}, 200
+        else:
+            # retorna a representação da transação
+            return sales_show(sales), 200
+    except Exception as e:
+        print("Erro na rota /sales:", str(e))
+        return {"message": "Erro interno na API"}, 500
 
 
 @app.get('/sale', tags=[sale_tag],
@@ -143,39 +189,83 @@ def del_sale(query: SaleSearchSchema):
         return {"mesage": error_msg}, 404
 
 
-@app.post('/user', tags=[user_tag], responses={"200": UserViewSchema, "409": ErrorSchema, "400": ErrorSchema})
-def add_users():
-    """Adiciona um novo usuário ao banco de dados a partir dos dados enviados via API
+# @app.post('/user', tags=[user_tag], responses={"200": UserViewSchema, "409": ErrorSchema, "400": ErrorSchema})
+# def add_user(form: UserSchema):
+    """Adiciona uma nova transação à base de dados
 
-    Retorna uma representação do usuário adicionado.
+    Retorna uma representação das transações.
     """
-
-    # Obtenha os dados do corpo da solicitação POST
-    data = request.json
-
-    # Crie um novo usuário com os dados recebidos
-    new_user = User(
-        display_name=data.get('display_name'),
-        email=data.get('email'),
-        photo_url=data.get('photo_url'),
-    )
-
     try:
-        # Crie uma conexão com o banco de dados
+        # Crie uma nova venda com os dados recebidos
+        new_user = User(
+            display_name=form.display_name,
+            photo_url=form.photo_url,
+            email=form.email,
+        )
+
+        # Criando conexão com a base de dados
         session = Session()
-        # Adicione o novo usuário
+
+        # Adicione a venda à sessão
         session.add(new_user)
-        # Efetue o commit da transação
+
+        # Efetue a operação de commit para salvar a nova venda no banco de dados
         session.commit()
+
+        # Retorne a representação da nova venda
         return user_show(new_user), 200
 
     except IntegrityError as e:
-        # Trate os erros de integridade (por exemplo, duplicação de dados)
+        # Como a duplicidade do nome é a provável razão do IntegrityError
         error_msg = "Erro de integridade, verifique os valores inseridos"
         return {"message": error_msg}, 409
 
     except Exception as e:
-        # Trate outros erros não previstos
+        # Caso ocorra um erro inesperado
+        error_msg = "Não foi possível salvar a nova transação :/"
+        return {"message": error_msg}, 400
+
+
+@app.post('/user', tags=[user_tag], responses={"200": UserViewSchema, "409": ErrorSchema, "400": ErrorSchema})
+def add_user(form: UserSchema):
+    """Adiciona um novo usuário ao banco de dados ou permite o login se o usuário já existir.
+
+    Retorna uma representação do usuário.
+    """
+    try:
+        # Criando conexão com o banco de dados
+        session = Session()
+
+        # Verifique se o usuário com o mesmo email já existe
+        existing_user = session.query(User).filter_by(email=form.email).first()
+
+        if existing_user:
+            # Se o usuário já existir, permita o login
+            return user_show(existing_user), 200
+        else:
+            # Caso contrário, crie um novo usuário
+            new_user = User(
+                display_name=form.display_name,
+                photo_url=form.photo_url,
+                email=form.email,
+            )
+
+            # Adicione o novo usuário à sessão
+            session.add(new_user)
+
+            # Efetue a operação de commit para salvar o novo usuário no banco de dados
+            session.commit()
+
+            # Retorne a representação do novo usuário
+            return user_show(new_user), 200
+
+    except IntegrityError as e:
+        # Como a duplicidade do email é a provável razão do IntegrityError
+        error_msg = "Erro de integridade, verifique os valores inseridos"
+        return {"message": error_msg}, 409
+
+    except Exception as e:
+        # Caso ocorra um erro inesperado
         error_msg = "Não foi possível salvar o novo usuário :/"
         return {"message": error_msg}, 400
 
@@ -191,12 +281,12 @@ def get_user(query: UserSearchSchema):
     # criando conexão com a base
     session = Session()
     # fazendo a busca
-    sale = session.query(User).filter(User.id == user_id).first()
+    user = session.query(User).filter(User.id == user_id).first()
 
-    if not User:
+    if not user:
         # se o produto não foi encontrado
         error_msg = "Transação não encontrada na base :/"
         return {"mesage": error_msg}, 404
     else:
         # retorna a representação de produto
-        return user_show(sale), 200
+        return user_show(user), 200

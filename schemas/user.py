@@ -18,7 +18,7 @@ class UserSearchSchema(BaseModel):
     """ Define como deve ser a estrutura que representa a busca. Que será
         feita apenas com base na data de inserção da transação.
     """
-    sale_id: int = 1
+    user_id: int = 1
 
 
 class UserViewSchema(BaseModel):

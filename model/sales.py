@@ -25,7 +25,7 @@ class Sale(Base):
         self.category = category
         self.amount = amount
         self.unitary_value = unitary_value
-        self.total = total
+        self.total = unitary_value * amount
 
         # se não for informada, será o data exata da inserção no banco
         if createdAt:

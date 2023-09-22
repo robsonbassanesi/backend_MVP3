@@ -82,6 +82,6 @@ def sale_show(sale: Sale):
         "category": sale.category,
         "amount": sale.amount,
         "unitary_value": sale.unitary_value,
-        "total": sale.total,
+        "total": sale.unitary_value * sale.amount,
         "createdAt": sale.createdAt,
     }
