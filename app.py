@@ -2,9 +2,6 @@ from flask_openapi3 import OpenAPI, Info, Tag
 from sqlalchemy.exc import IntegrityError
 from flask_cors import CORS
 from flask import redirect, request, jsonify
-import jwt  # Importe a biblioteca JWT
-
-
 from model import Session, Sale, User
 from schemas import *
 from schemas.sale import sale_show
