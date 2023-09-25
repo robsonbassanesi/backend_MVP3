@@ -20,69 +20,27 @@ class SaleSchema(BaseModel):
 
 class SaleSearchSchema(BaseModel):
     """ Define como deve ser a estrutura que representa a busca. Que será
-        feita apenas com base na data de inserção da transação.
+        feita apenas com base na data de inserção da venda.
     """
     sale_id: int = 1
 
 
 class SalesSearchSchema(BaseModel):
     """ Define como deve ser a estrutura que representa a busca. Que será
-        feita apenas com base na data de inserção da transação.
+        feita apenas com base na data de inserção da venda.
     """
     user_id: int = 1
 
 
 class SaleListSchema(BaseModel):
-    """ Define como uma listagem de transações será retornada.
+    """ Define como uma listagem de venda será retornada.
     """
     user_id: int = 1
     sales: List[SaleSchema]
 
 
-# def sales_show(sales: List[Sale]):
-#     """ Retorna uma representação da transação seguindo o schema definido em
-#         TransactionViewSchema.
-#     """
-#     result = []
-#     for sale in sales:
-#         result.append({
-#             "id": sale.id,
-#             "customer": sale.customer,
-#             "product": sale.product,
-#             "category": sale.category,
-#             "amount": sale.amount,
-#             "unitary_value": sale.unitary_value,
-#             "total": sale.total,
-#             "user_id": sale.user_id,
-#             "createdAt": sale.createdAt,
-#         })
-
-#     return {"sales": result}
-
-
-# def sales_show(sales: List[Sale], user_id: int):
-#     """ Retorna uma representação da transação seguindo o schema definido em
-#         SaleListSchema, filtrando as vendas pelo ID do usuário.
-#     """
-#     result = []
-#     for sale in sales:
-#         if sale.user_id == user_id:
-#             result.append({
-#                 "id": sale.id,
-#                 "customer": sale.customer,
-#                 "product": sale.product,
-#                 "category": sale.category,
-#                 "amount": sale.amount,
-#                 "unitary_value": sale.unitary_value,
-#                 "total": sale.total,
-#                 "user_id": sale.user_id,
-#                 "createdAt": sale.createdAt,
-#             })
-
-#     return {"user_id": user_id, "sales": result}
-
 def sales_show(sales: List[Sale], user_id: int):
-    """ Retorna uma representação da transação seguindo o schema definido em
+    """ Retorna uma representação da venda seguindo o schema definido em
         SaleListSchema, filtrando as vendas pelo ID do usuário.
     """
     result = []
@@ -103,7 +61,7 @@ def sales_show(sales: List[Sale], user_id: int):
 
 
 class SaleViewSchema(BaseModel):
-    """ Define como uma transação será retornada
+    """ Define como uma venda será retornada
     """
     id: int = 1
     customer: str = "Pedro Antunes"
@@ -126,7 +84,7 @@ class SaleDelSchema(BaseModel):
 
 def sale_show(sale: Sale):
     """ Retorna uma representação da transação seguindo o schema definido em
-        TransactionViewSchema.
+        SaleViewSchema.
     """
     return {
         "id": sale.id,

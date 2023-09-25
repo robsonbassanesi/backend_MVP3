@@ -5,6 +5,8 @@ from typing import Union
 
 from model import Base
 
+# estrtutura da tabela de usuários que será criada
+
 
 class User(Base):
     __tablename__ = 'user'

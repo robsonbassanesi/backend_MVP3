@@ -6,6 +6,7 @@ Após clonar o repositório, é necessário ir ao diretório raiz, pelo terminal
 > É fortemente indicado o uso de ambientes virtuais do tipo [virtualenv](https://virtualenv.pypa.io/en/latest/installation.html).
 
 > OBS: para iniciar o ambiente virtual em máquina windows, digite o comando .\env\Scripts\Activate
+> OBS: para encerrar o ambiente virtual em máquina windows, digite o comando .\env\Scripts\Deactivate
 
 ```
 (env)$ pip install -r requirements.txt

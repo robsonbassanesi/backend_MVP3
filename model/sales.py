@@ -6,6 +6,8 @@ from typing import Union
 
 from model import Base
 
+# estrtutura da tabela de vendas que será criada
+
 
 class Sale(Base):
     __tablename__ = 'sales'

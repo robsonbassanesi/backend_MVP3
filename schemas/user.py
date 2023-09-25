@@ -5,7 +5,7 @@ from datetime import datetime
 
 
 class UserSchema(BaseModel):
-    """ Define como uma nova transação deve ser apresentada
+    """ Define como um novo usuário deve ser apresentado
     """
 
     display_name: str = "Pedro Antunes"
@@ -16,13 +16,13 @@ class UserSchema(BaseModel):
 
 class UserSearchSchema(BaseModel):
     """ Define como deve ser a estrutura que representa a busca. Que será
-        feita apenas com base na data de inserção da transação.
+        feita apenas com base na data de cadastro do usuário.
     """
     user_id: int = 1
 
 
 class UserViewSchema(BaseModel):
-    """ Define como uma transação será retornada
+    """ Define como um usuário será retornado.
     """
     id: int = 1
     display_name: str = "Pedro Antunes"
@@ -33,7 +33,7 @@ class UserViewSchema(BaseModel):
 
 def user_show(user: User):
     """ Retorna uma representação da transação seguindo o schema definido em
-        TransactionViewSchema.
+        UserViewSchema.
     """
     return {
         "id": user.id,
