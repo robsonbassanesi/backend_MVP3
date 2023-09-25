@@ -1,4 +1,4 @@
-# Como executar
+# Como executar em ambiente local
 
 Será necessário ter todas as libs python listadas no `requirements.txt` instaladas.
 Após clonar o repositório, é necessário ir ao diretório raiz, pelo terminal, para poder executar os comandos descritos abaixo.
@@ -24,7 +24,25 @@ Em modo de desenvolvimento é recomendado executar utilizando o parâmetro reloa
 automaticamente após uma mudança no código fonte.
 
 ```
-(env)$ flask run --host 0.0.0.0 --port 5000 --reload
+(env)$ flask run --host 0.0.0.0 --port 4500 --reload
 ```
 
-Abra o [http://localhost:5000/#/](http://localhost:5000/#/) no navegador para verificar o status da API em execução.
+Abra o [http://localhost:4500/#/](http://localhost:4500/#/) no navegador para verificar o status da API em execução.
+
+# Como executar com Docker
+
+Para iniciar utilizando Docker digite os comandos abaixo:
+
+```shell
+docker build -t backend .
+```
+
+E então digite:
+
+```shell
+docker run -p 4500:4500 backend
+```
+
+Observe que em ambos os códigos o nome da imagem deve ser "backend".
+
+> OBS: a porta para execução do backend precisa ser 4500, pois o frontend está fixo nessa porta.
